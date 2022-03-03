@@ -5,12 +5,22 @@ import deserializeUser from './middleware/deserializeUser';
 import { routerUser } from './router';
 import cityRouter from './router/cityRouter';
 import studentRouter from './router/studentRouter';
+import { createServer } from "http";
+import { Server } from "socket.io";
+import { ClientToServerEvents, InterServerEvents, ServerToClientEvents, SocketData } from './model';
 
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const helmet = require('helmet');
 const app: Application = express();
+const httpServer = createServer(app);
+const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(httpServer, {
+  cors: {
+    origin: 'http://localhost:3000',
+    credentials: true,
+  }
+});
 const PORT = 8080;
 
 db();
@@ -33,6 +43,18 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   handleError(err, res);
 });
 
-app.listen(PORT, () => {
+
+io.on("connection", (socket) => {
+  socket.on('addStudents', () =>{
+    setTimeout(() =>{
+      socket.emit('addStudent', true);
+    }, 3000);
+  });
+  // socket.on('removeStudent', () =>{
+
+  // })
+});
+
+httpServer.listen(PORT, () => {
   console.log('listening on port: ', PORT);
 });
