@@ -14,8 +14,9 @@ routerUser.post('/register', async (req: Request, res: Response) => {
   } else {
     const passwordHash = await bcrypt.hash(req.body.password, 10);
     const newUser = new userModel({
-      email: req.body.email,
+      email: req.body.email, 
       password: passwordHash,
+      notifications: [],
     });
     await newUser.save();
     newUser.password = '';
@@ -25,9 +26,30 @@ routerUser.post('/register', async (req: Request, res: Response) => {
     });
   }
 });
+routerUser.patch('/user', authMiddleware, async (req, res) => {
+  //@ts-ignore
+  const user = req.user;
+  user.notifications = user.notifications.filter((item: any) => {
+    if(item.new){
+      item.new=false;
+      return item;
+    }else{
+      return item;
+    }
+  })
+  await user.save();
+  res.status(200).send(user);
+
+})
 routerUser.delete('/logout', deleteSessionHandler);
-routerUser.post('/checkLogin', authMiddleware, (req, res) => {
+routerUser.post('/checkLogin', authMiddleware,async (req, res) => {
+  //@ts-ignore
+  const user = await userModel.findOne({ email: req.email });
+  
   res.send({
     success: true,
+    //@ts-ignore
+    email: req.email,
+    notifications: user?.notifications || [],
   })
 })

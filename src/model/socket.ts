@@ -1,13 +1,24 @@
 export interface ServerToClientEvents {
-  noArg: () => void;
-  basicEmit: (a: number, b: string, c: Buffer) => void;
-  withAck: (d: string, callback: (e: number) => void) => void;
-  addStudent: (success: boolean) => void;
+  removeStudentResponse: (success: boolean) => void;
+  loginResponse: (success: boolean) => void;
+  addStudentResponse: (success: boolean) => void;
+  messageAuto:(message: string, roomId: string, userName: string) => void;
+  newJoin:(message: string) => void;
+  roomData: (userName: string) => void;
+  newMessage: (message: string, userName: string) => void;
+  resJoinedPost:(online: string[]) => void;
+  newComment:(comment: string, postId: string, userName: string, auth: string) => void;
 }
-
+ 
 export interface ClientToServerEvents {
-  addStudents: () => void;
+  addStudentRequest: () => void;
   removeStudent: () => void;
+  loginRequest: () => void;
+  joinRequest: (userName: string, roomId: string) => void;
+  sendMessage: (message: string, userName: string, roomId: string) => void;
+  outRoom:() => void;
+  joinPost:(userName: string) => void;
+  sendComment:(comment: string, postId: string, userName: string, auth: string) => void;
 }
 
 export interface InterServerEvents {

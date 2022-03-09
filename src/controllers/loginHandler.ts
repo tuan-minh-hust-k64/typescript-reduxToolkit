@@ -16,14 +16,14 @@ export async function loginHandler(req: Request | any, res: Response) {
     // create access token
     const accessToken = signJWT({ email: req.user.email, sessionId: session.sessionId }, '10h');
 
-    const refreshToken = signJWT({ sessionId: session.sessionId }, '1y');
+    const refreshToken = signJWT({ sessionId: session.sessionId, email: req.user.email }, '1y');
 
     // set access token in cookie
     res.cookie('accessToken', accessToken, {
       maxAge: 300000, // 5 minutes
       httpOnly: true,
     });
-
+ 
     res.cookie('refreshToken', refreshToken, {
       maxAge: 3.154e10, // 1 year
       httpOnly: true,
@@ -31,7 +31,7 @@ export async function loginHandler(req: Request | any, res: Response) {
 
     // send user back
     return res.send({
-      success: true,
+      success: true, 
       user: req.user
     });
   }

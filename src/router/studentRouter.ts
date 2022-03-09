@@ -26,7 +26,7 @@ studentRouter.get('/student', authMiddleware, async (req, res) => {
     //@ts-ignore
     const students = await studentModel.find().where(args).limit(limit).skip(skip).sort(sort);
     res.status(200).send(students);
-  } catch (err) {
+  } catch (err) { 
     throw new ErrorHandler(500, 'Can not found student');
   }
 });
