@@ -1,30 +1,53 @@
-import { NextFunction, Request, Response } from 'express';
-import ErrorHandler from '../helpers/error';
-import userModel from '../model/user';
-import { verifyJWT } from '../util/jwt.util';
+import { UnauthorizedError } from "../common/error";
+import asyncHandle from "../helpers/asyncHandle";
+import { authService } from "../service/auth.service";
+import { verifyCredentials } from "../util/jwt";
 
-const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  const { accessToken, refreshToken } = req.cookies;
-  if(refreshToken){
-    const decode = verifyJWT(refreshToken);
-    //@ts-ignore
-    const emailAuth = decode.payload.email;
-    try {
-      const userExit = await userModel.findOne({ email: emailAuth });
-      if (userExit) {
-        //@ts-ignore
-        req.email = emailAuth;
-        //@ts-ignore
-        req.user = userExit;
-      }else{
-        throw new ErrorHandler(401, 'Please authenticate!');
-      }
-    } catch (err) {
-      next(err);
+export const verifyTokenMiddleware = asyncHandle(async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    let token;
+    if(authHeader) {
+        const [type, _token] = authHeader.split(' ');
+        if(type.toLocaleLowerCase() !=='bearer' || !_token) {
+            throw new UnauthorizedError({message: 'Invalid token'});
+        }
+        token = _token;
+    }else {
+        const _token = req.cookies['x-access-token'];
+        if(!_token) {
+            throw new UnauthorizedError({message: 'Invalid token'});
+        }
+        token = _token;
     }
-  }else{
-    next(new ErrorHandler(401, 'Please authenticate'));
-  }
-  next();
-};
-export default authMiddleware;
+    const credentials = verifyCredentials({token});
+    if(!credentials) {
+        throw new UnauthorizedError({message: 'Invalid token'});
+    }
+    //@ts-ignore
+    const saveToken = await authService.getAccessToken(credentials.userId);
+    if(!saveToken || saveToken !== token) {
+        throw new UnauthorizedError({message: 'Invalid token'});    
+    }
+    req.credentials = credentials;
+    return next!();
+})
+
+
+export const verifyRefreshTokenMiddleware = asyncHandle(async (req, res, next) => {
+    let token = req.body.refresh_token;
+    if (!token) {
+      const _token = req.cookies['x-refresh-token'];
+      if (!_token) throw new UnauthorizedError({ message: 'Invalid Token' });
+      token = _token;
+    }
+  
+    const credentials = verifyCredentials({ token, type: 'refreshToken' });
+    if (!credentials) throw new UnauthorizedError({ message: 'Invalid Token' });
+  
+    // TODO: REDIS
+    //@ts-ignore
+    const savedToken = await authService.getRefreshToken(credentials.userId);
+    if (!savedToken || savedToken !== token) throw new UnauthorizedError({ message: 'Invalid Token' });
+    req.credentials = credentials;
+    return next!();
+})

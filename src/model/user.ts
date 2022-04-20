@@ -1,53 +1,36 @@
-import { Schema, model } from 'mongoose';
-
+import {Schema, model} from 'mongoose';
 export interface IUser {
-  email: string;
-  password: string;
-  notifications: string[];
+    _id?: string;
+    email: String;
+    name?: String;
+    password: String;
 }
-
-const notification = new Schema({
-  content: {
-    type: 'string',
-    required: true,
-    trim: true,
-  },
-  new: {
-    type: 'boolean',
-    required: true,
-    trim: true,
-  },
-  postId: {
-    type: 'string',
-    required: true,
-    trim: true,
-  }
-},{
-  timestamps: true
-})
-
-const schema = new Schema<IUser>(
-  {
+const schema = new Schema<IUser>({
     email: {
-      type: 'string',
-      required: true,
-      trim: true,
+        type: 'string',
+        trim: true,
+        require: true
+    },
+    name: {
+        type: 'string',
+        trim: true,
+        require: true
     },
     password: {
-      type: 'string',
-      required: true,
-      trim: true,
-    },
-    notifications: [notification]
-  },
-  {
-    timestamps: true,
-  }
-);
-
-const userModel = model<IUser>('User', schema);
-
-
-
+        type: 'string',
+        trim: true,
+        require: true
+    }
+});
+const userModel = model('user', schema);
 
 export default userModel;
+
+export class UserDb {
+    async saveUser(args: IUser): Promise<IUser> {
+        const newUser = new userModel(args);
+        await newUser.save();
+        newUser.password='';
+        return newUser;
+    }
+}
